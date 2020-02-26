@@ -1,0 +1,55 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "spoke": {
+            "type": "object",
+            "defaultValue": {
+                "vnet": {
+                    "name": "Example-vnet",
+                    "addressPrefixes": [
+                        "10.1.0.0/16"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "addressPrefix": "10.1.1.0/24",
+                        "name": "Example-vnet-subnet1"
+                    },
+                    {
+                        "addressPrefix": "10.1.2.0/24",
+                        "name": "Example-vnet-subnet2"
+                    }
+                ]
+            },
+            "metadata": {
+                "description": "Object containing information for the spoke vNet.  See defaultValue for expected structure."
+            }
+        }
+    },
+    "resources": [
+        {
+            "name": "[concat(parameters('spoke').vnet.name)]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2017-10-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": "[parameters('spoke').vnet.addressPrefixes]"
+                },
+                "copy": [
+                    {
+                        "name": "subnets",
+                        "count": "[length(parameters('spoke').subnets)]",
+                        "input": {
+                            "name": "[parameters('spoke').subnets[copyIndex('subnets')].name]",
+                            "properties": {
+                                "addressPrefix": "[parameters('spoke').subnets[copyIndex('subnets')].addressPrefix]"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
