@@ -2,6 +2,15 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+         "vnetName": {
+            "type": "string"
+        },
+        "subnetName": {
+            "type": "string"
+        },
+        "vmName": {
+            "type": "string"
+        },
         "adminUsername": {
             "defaultValue": "labuser",
             "type": "string"
@@ -9,68 +18,6 @@
         "adminPassword": {
             "defaultValue": "M1crosoft123",
             "type": "securestring"
-        },
-        "vmName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name for the virtual machine"
-            },
-            "defaultValue": "myUbuntuVm"
-        },
-        "dnsLabelPrefix": {
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description": "Unique DNS Name for the Public IP used to access the Virtual Machine."
-            }
-        },
-        "ubuntuOSVersion": {
-            "type": "string",
-            "defaultValue": "16.04-LTS",
-            "allowedValues": [
-                "14.04-LTS",
-                "16.04-LTS",
-                "17.04",
-                "17.10"
-            ],
-            "metadata": {
-                "description": "The Ubuntu version for the VM. This will pick a fully patched image of this given Ubuntu version."
-            }
-        },
-        "numberOfDataDisks": {
-           "type": "int",
-           "defaultValue": 1,
-           "maxValue": 2,
-           "metadata": {
-                "description": "Number of data disks for the virtual machine"
-            }
-        },
-        "vnetName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name for the virtual network"
-            }
-        },
-        "vnetPrefix": {
-            "type": "string",
-            "defaultValue": "10.0.0.0/16",
-            "metadata": {
-                "description": "CIDR address space for the virtual network"
-            }
-        },
-        "subnetName": {
-            "type": "string",
-            "defaultValue": "Subnet",
-            "metadata": {
-                "description": "Name for the subnet - defaults to Subnet"
-            }
-        },
-        "subnetPrefix": {
-            "type": "string",
-            "defaultValue": "10.0.0.0/24",
-            "metadata": {
-                "description": "CIDR address space for the subnet"
-            }
         },
         "pip?": {
             "defaultValue": false,
@@ -81,103 +28,49 @@
         }
     },
     "variables": {
-        "pip?": "[if(empty(parameters('dnsLabelPrefix')), bool('false'), bool('true'))]",
+        "nicName": "[concat(parameters('vmName'),'-nic')]",
+        "pipName": "[concat(parameters('vmName'),'-pip')]",
+        "osDiskName": "[concat(parameters('vmName'),'-os')]",
+        "pipId": "[resourceId('Microsoft.Network/publicIPAddresses',variables('pipName'))]",
+        "nicId": "[resourceId('Microsoft.Network/networkInterfaces/', variables('nicName'))]",
+        "vnetId": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+        "subnetId": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName'))]",
         "pipObject": {
-            "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('pipName'))]"
-        },
-        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]",
-        "subnetRef": "[concat(variables('vnetID'), '/subnets/', parameters('subnetName'))]",
-        "nicName": "[concat(parameters('vmName'), '-nic')]",
-        "pipName": "[concat(parameters('vmName'), '-pip')]",
-        "pipType": "Dynamic",
-        "vmSize": "Standard_B1s",
-        "imagePublisher": "Canonical",
-        "imageOffer": "UbuntuServer",
-        "storageAccountType": "Standard_LRS",
-        "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'kidd')]"
+            "id": "[variables('pipId')]"
+        }
     },
     "resources": [
         {
-            "name": "[variables('storageAccountName')]",
-            "type": "Microsoft.Storage/storageAccounts",
-            "apiVersion": "2017-06-01",
-            "location": "[resourceGroup().location]",
-            "sku": {
-                "name": "[variables('storageAccountType')]"
-            },
-            "kind": "Storage",
-            "properties": {}
-        },
-        {
-            "condition": "[variables('pip?')]",
+            "comments": "Conditionally create public IP address for VM",
+            "condition": "[parameters('pip?')]",
             "name": "[variables('pipName')]",
             "type": "Microsoft.Network/publicIPAddresses",
-            "apiVersion": "2017-06-01",
+            "apiVersion": "2017-10-01",
             "location": "[resourceGroup().location]",
             "properties": {
-                "publicIPAllocationMethod": "[variables('pipType')]",
-                "dnsSettings": {
-                    "domainNameLabel": "[parameters('dnsLabelPrefix')]"
-                }
-            }
-        },
-        {
-            "name": "[parameters('vnetName')]",
-            "type": "Microsoft.Network/virtualNetworks",
-            "apiVersion": "2017-06-01",
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "addressSpace": {
-                    "addressPrefixes": [
-                        "[parameters('vnetPrefix')]"
-                    ]
-                },
-                "subnets": [
-                    {
-                        "name": "[parameters('subnetName')]",
-                        "properties": {
-                            "addressPrefix": "[parameters('subnetPrefix')]"
-                        }
-                    }
-                ]
+                "publicIPAllocationMethod": "Dynamic"
             }
         },
         {
             "name": "[variables('nicName')]",
             "type": "Microsoft.Network/networkInterfaces",
-            "apiVersion": "2017-06-01",
+            "apiVersion": "2017-10-01",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/publicIPAddresses/', variables('pipName'))]",
-                "[variables('vnetID')]"
-            ],
-            "properties": {
-                "ipConfigurations": [
-                    {
-                        "name": "ipconfig1",
-                        "properties": {
-                            "privateIPAllocationMethod": "Dynamic",
-                            "publicIPAddress": "[if(variables('pip?'), variables('pipObject'), json('null'))]",
-                            "subnet": {
-                                "id": "[variables('subnetRef')]"
-                            }
-                        }
-                    }
-                ]
-            }
+                "[variables('pipID')]"
+            ]
         },
         {
-            "name": "[parameters('vmName')]",
+            "name": "[concat(parameters('vmName'))]",
             "type": "Microsoft.Compute/virtualMachines",
-            "apiVersion": "2017-03-30",
+            "apiVersion": "2017-12-01",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
-                "[resourceId('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
+                "[variables('nicId')]"
             ],
             "properties": {
                 "hardwareProfile": {
-                    "vmSize": "[variables('vmSize')]"
+                    "vmSize": "Standard_A0"
                 },
                 "osProfile": {
                     "computerName": "[parameters('vmName')]",
@@ -186,30 +79,29 @@
                 },
                 "storageProfile": {
                     "imageReference": {
-                        "publisher": "[variables('imagePublisher')]",
-                        "offer": "[variables('imageOffer')]",
-                        "sku": "[parameters('ubuntuOSVersion')]",
+                        "publisher": "canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "16.04.0-LTS",
                         "version": "latest"
                     },
                     "osDisk": {
-                        "name": "[concat(parameters('vmName'), '-osDisk')]",
+                        "name": "[variables('osDiskName')]",
                         "createOption": "FromImage"
                     }
                 },
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('nicName'))]"
+                            "id": "[variables('nicId')]"
                         }
                     ]
                 },
                 "diagnosticsProfile": {
                     "bootDiagnostics": {
-                        "enabled": true,
-                        "storageUri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName')), '2016-01-01').primaryEndpoints.blob)]"
+                        "enabled": false
                     }
                 }
             }
         }
     ]
- }
+}
