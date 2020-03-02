@@ -148,29 +148,7 @@
                 },
                 "availabilitySet": "[if(empty(parameters('avsetName')), json('null'), variables('avsetObject'))]"
             }
-        },
-        {
-            "condition": "[not(empty(parameters('script')))]",
-            "comments": "Script, stdout and stderr will be output to /var/lib/waagent/custom-script/download/0/.  Use sudo to access.",
-            "name": "[concat(parameters('vmName'), '/script-', parameters('script'))]",
-            "type": "Microsoft.Compute/virtualMachines/extensions",
-            "apiVersion": "2017-12-01",
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "publisher": "Microsoft.Azure.Extensions",
-                "type": "CustomScript",
-                "typeHandlerVersion": "2.0",
-                "autoUpgradeMinorVersion": true,
-                "settings": {
-                    "fileUris": [
-                        "[variables('scriptUri')]"
-                    ],
-                    "commandToExecute": "[concat('/bin/bash -x ', parameters('script'), ' 2>&1')]"
-                }
-            },
-            "dependsOn": [
-                "[parameters('vmName')]"
-            ]
         }
+        
     ]
 }
