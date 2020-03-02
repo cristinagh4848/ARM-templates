@@ -94,8 +94,7 @@
         "imagePublisher": "Canonical",
         "imageOffer": "UbuntuServer",
         "storageAccountType": "Standard_LRS",
-        "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'kidd')]",
-        "vmId": "[resourceId('Microsoft.Compute/virtualMachines/', parameters('vmName'))]"
+        "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'kidd')]"
     },
     "resources": [
         {
@@ -195,19 +194,7 @@
                     "osDisk": {
                         "name": "[concat(parameters('vmName'), '-osDisk')]",
                         "createOption": "FromImage"
-                    },
-                    "copy": [
-                        {
-                            "name": "dataDisks",
-                            "count": "[parameters('numberofDataDisks')]",
-                            "input": {
-                                "name": "[concat(parameters('vmName'), '-dataDisk', padLeft(copyIndex('dataDisks'), 2, '0'))]",
-                                "lun": "[copyIndex('dataDisks')]",
-                                "createOption": "Empty",
-                                "diskSizeGB": 1023
-                            }
-                        }
-                    ]
+                    }
                 },
                 "networkProfile": {
                     "networkInterfaces": [
@@ -224,11 +211,5 @@
                 }
             }
         }
-    ],
-    "outputs": {
-        "osDiskId": {
-            "type": "string",
-            "value": "[reference(variables('vmId')).storageProfile.osDisk.managedDisk.id]"
-        }
-    }
-}
+    ]
+ }
