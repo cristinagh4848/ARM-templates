@@ -10,27 +10,39 @@
             }
         },
         "vNet1": {
-            "type": "string",
+            "type": "object",
+            "defaultValue": {
+                "resourceGroup": "centralus",
+                "vnet": {
+                    "name": "vNet1"
+                }
+            },
             "metadata": {
-                "description": "Local VNet name"
+                "description": "Object containing required information for the hub vNet.  See defaultValue for minimum expected structure."
             }
         },
         "vNet2": {
-            "type": "string",
+            "type": "object",
+            "defaultValue": {
+                "resourceGroup": "centralus",
+                "vnet": {
+                    "name": "vNet2"
+                }
+            },
             "metadata": {
-                "description": "Remote VNet name"
+                "description": "Object containing required information for the hub vNet.  See defaultValue for minimum expected structure."
             }
         }
     },
     "variables": {
-        "vNet1": "[resourceId(parameters('vNet1'), 'Microsoft.Network/virtualNetworks', parameters('vNet1'))]",
-        "peeringName": "[concat(parameters('vNet1'), '/peering-to-remote-vnet')]"
+        "vNet1id": "[resourceId(parameters('vNet1').resourceGroup,'Microsoft.Network/virtualNetworks/', parameters('vNet1').vnet.name)]",
+        "vNet2id": "[resourceId(parameters('vNet2').resourceGroup,'Microsoft.Network/virtualNetworks/', parameters('vNet2').vnet.name)]"
     },        
     "resources": [
-        {
+      {
             "comments": "Optional vnet to hub peering",
             "condition": "[parameters('peer')]",
-            "name": "[concat(parameters('vNet1'), '/to-', parameters('vNet2'))]",
+            "name": "[concat(parameters('vNet1').vnet.name, '/to-', parameters('vNet2').vnet.name)]",
             "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
             "apiVersion": "2017-10-01",
             "location": "[resourceGroup().location]",
@@ -40,10 +52,11 @@
                 "allowGatewayTransit": false,
                 "useRemoteGateways": false,
                 "remoteVirtualNetwork": {
-                    "id": "[resourceId(parameters('vNet1').resourceGroup,'Microsoft.Network/virtualNetworks/', parameters('vNet1'))]"
+                    "id": "[variables('vNet1id')]"
                 }
             },
             "dependsOn": [
+                "Deploy-Spoke1-vNet",
                 "Deploy-Spoke2-vNet"
             ]
         }
