@@ -56,7 +56,7 @@
                 }
             },
             "dependsOn": [
-                "[concat(parameters('vNet2'))]"
+                "[concat(parameters('vNet2').vnet.name)]"
             ]
         }
     ]
