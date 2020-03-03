@@ -56,8 +56,7 @@
                 }
             },
             "dependsOn": [
-                "Deploy-Spoke1-vNet",
-                "Deploy-Spoke2-vNet"
+                "[concat(parameters('vNet2'))]"
             ]
         }
     ]
