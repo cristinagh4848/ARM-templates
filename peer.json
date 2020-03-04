@@ -54,10 +54,7 @@
                 "remoteVirtualNetwork": {
                     "id": "[variables('vNet2id')]"
                 }
-            },
-            "dependsOn": [
-                "[concat(parameters('vNet2').vnet.name)]"
-            ]
+            }
        }
     ]
 }
