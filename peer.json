@@ -62,7 +62,7 @@
                {
             "comments": "Inline deployment for reverse peering",
             "condition": "[parameters('peer')]",
-            "name": "[concat('DeployVnetPeering-', parameters('vNet2').vnet.name, '-to-', parameters('vNet2').vnet.name)]",
+            "name": "[concat('DeployVnetPeering-', parameters('vNet2').vnet.name, '-to-', parameters('vNet1').vnet.name)]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2017-05-10",
             "resourceGroup": "[parameters('vNet2').resourceGroup]",
