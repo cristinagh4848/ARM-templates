@@ -75,7 +75,7 @@
                         {
                             "apiVersion": "2017-10-01",
                             "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
-                            "name": "[concat(parameters('vnet2').vnet.name, '/to-', parameters('vNet2').vnet.name)]",
+                            "name": "[concat(parameters('vnet2').vnet.name, '/to-', parameters('vNet1').vnet.name)]",
                             "location": "[resourceGroup().location]",
                             "properties": {
                                 "allowVirtualNetworkAccess": true,
